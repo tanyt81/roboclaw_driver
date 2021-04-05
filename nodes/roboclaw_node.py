@@ -16,7 +16,7 @@ DEFAULT_DEV_NAMES = "/dev/ttyACM0"
 DEFAULT_BAUD_RATE = 115200
 DEFAULT_NODE_NAME = "roboclaw"
 DEFAULT_LOOP_HZ = 100
-DEFAULT_ADDRESS = 0x80
+DEFAULT_ADDRESS = 0x81
 DEFAULT_DEADMAN_SEC = 3
 DEFAULT_STATS_TOPIC = "~stats"
 DEFAULT_SPEED_CMD_TOPIC = "~speed_command"
@@ -100,6 +100,7 @@ class RoboclawNode:
 
                 # Read and publish encoder readings
                 read_success, stats = self._rbc_ctls[0].read_stats()
+                #print(stats)
                 for error in stats.error_messages:
                     rospy.logwarn(error)
                 if read_success:

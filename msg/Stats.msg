@@ -11,8 +11,8 @@ int32 m2_enc_qpps
 
 
 # Motor 1 & 2 current pull
-int32 m1_current
-int32 m2_current
+float32 m1_current
+float32 m2_current
 
 # Motor Controller Temperature
-int32 mc_temp
+float32 mc_temp

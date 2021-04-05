@@ -43,7 +43,7 @@ class RoboclawStats:
         self.m1_enc_val = None
         self.m2_enc_val = None
         self.m1_enc_qpps = None
-        self.m2_enc_qpps = None        
+        self.m2_enc_qpps = None
         self.m1_current = None
         self.m2_current = None
         self.mc_temp = None
@@ -197,14 +197,14 @@ class RoboclawControl:
                 stats.m1_current = cur1 / 100.0
                 stats.m2_current = cur2 / 100.0
             except ValueError as e:
-                diag.error_messages.append("Motor currents ValueError: {}".format(e.message))
+                stats.error_messages.append("Motor currents ValueError: {}".format(e.message))
 
             # Read Roboclaw temperature
             try:
                 success, temp = self._roboclaw.ReadTemp(self._address)
                 stats.mc_temp = temp / 10.0
             except ValueError as e:
-                diag.error_messages.append("Temperature 1 ValueError: {}".format(e.message))
+                stats.error_messages.append("Temperature 1 ValueError: {}".format(e.message))
 
         # Return (success, stats)
         return (True, stats)
