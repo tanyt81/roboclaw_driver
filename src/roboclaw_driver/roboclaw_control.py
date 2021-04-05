@@ -30,7 +30,10 @@ class RoboclawStats:
         m1_enc_val: Motor 1 encoder value (>= 0)
         m2_enc_val: Motor 2 encoder value (>= 0)
         m1_enc_qpps: Motor 1 encoder speed in QPPS (+/-)
-        m2_enc_qpps: Motor 2 encoder speed in QPPS (+/-)
+        m2_enc_qpps: Motor 2 encoder speed in QPPS (+/-)        
+        m1_current: Motor 1 current (amps)
+        m2_current: Motor 2 current (amps)
+        mc_temp: Roboclaw controller temperature (C)
         error_messages: List of error messages occuring during stats reading
 
     Notes:
@@ -40,13 +43,17 @@ class RoboclawStats:
         self.m1_enc_val = None
         self.m2_enc_val = None
         self.m1_enc_qpps = None
-        self.m2_enc_qpps = None
+        self.m2_enc_qpps = None        
+        self.m1_current = None
+        self.m2_current = None
+        self.mc_temp = None
         self.error_messages = []
 
     def __str__(self):
-        return "[M1 enc: {}, qpps: {}]  [M2 enc: {}, qpps: {}]".format(
-                self.m1_enc_val, self.m1_enc_qpps,
-                self.m2_enc_val, self.m2_enc_qpps
+        return "[M1 enc: {}, qpps: {}. cur: {}]  [M2 enc: {}, qpps: {}, cur: {}], temp:{}".format(
+                self.m1_enc_val, self.m1_enc_qpps, self.m1_current,
+                self.m2_enc_val, self.m2_enc_qpps, self.m2_current,
+                self.mc_temp
         )
 
 
@@ -184,6 +191,20 @@ class RoboclawControl:
                     read_error = True
             if read_error:
                 return (False, None)
+
+            try:
+                success, cur1, cur2 = self._roboclaw.ReadCurrents(self._address)
+                stats.m1_current = cur1 / 100.0
+                stats.m2_current = cur2 / 100.0
+            except ValueError as e:
+                diag.error_messages.append("Motor currents ValueError: {}".format(e.message))
+
+            # Read Roboclaw temperature
+            try:
+                success, temp = self._roboclaw.ReadTemp(self._address)
+                stats.mc_temp = temp / 10.0
+            except ValueError as e:
+                diag.error_messages.append("Temperature 1 ValueError: {}".format(e.message))
 
         # Return (success, stats)
         return (True, stats)

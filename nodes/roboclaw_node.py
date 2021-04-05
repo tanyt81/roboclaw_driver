@@ -48,10 +48,10 @@ class RoboclawNode:
             queue_size=1
         )
 
-        # Set up the Diagnostic Updater
-        self._diag_updater = diagnostic_updater.Updater()
-        self._diag_updater.setHardwareID(node_name)
-        self._diag_updater.add("Read Diagnostics", self._publish_diagnostics)
+        # # Set up the Diagnostic Updater
+        # self._diag_updater = diagnostic_updater.Updater()
+        # self._diag_updater.setHardwareID(node_name)
+        # self._diag_updater.add("Read Diagnostics", self._publish_diagnostics)
 
         # Set up the SpeedCommand Subscriber
         rospy.Subscriber(
@@ -115,8 +115,8 @@ class RoboclawNode:
                         for rbc_ctl in self._rbc_ctls:
                             rbc_ctl.stop(decel=decel)
 
-                # Publish diagnostics
-                self._diag_updater.update()
+                # # Publish diagnostics
+                # self._diag_updater.update()
 
                 looprate.sleep()
 
@@ -134,9 +134,13 @@ class RoboclawNode:
 
         msg.m1_enc_val = stats.m1_enc_val
         msg.m1_enc_qpps = stats.m1_enc_qpps
+        msg.m1_current = stats.m1_current
 
         msg.m2_enc_val = stats.m2_enc_val
         msg.m2_enc_qpps = stats.m2_enc_qpps
+        msg.m2_current = stats.m2_current
+
+        msg.mc_temp = stats.mc_temp
 
         # rospy.logdebug("Encoder diffs M1:{}, M2:{}".format(
         #     stats.m1_enc_val - self.prev_m1_val,
@@ -147,34 +151,34 @@ class RoboclawNode:
 
         self._stats_pub.publish(msg)
 
-    def _publish_diagnostics(self, stat):
-        """Function called by the diagnostic_updater to fetch and publish diagnostics
-        from the Roboclaw controller
+    # def _publish_diagnostics(self, stat):
+    #     """Function called by the diagnostic_updater to fetch and publish diagnostics
+    #     from the Roboclaw controller
 
-        Parameters:
-        :param diagnostic_updater.DiagnosticStatusWrapper stat:
-            DiagnosticStatusWrapper provided by diagnostic_updater when called
+    #     Parameters:
+    #     :param diagnostic_updater.DiagnosticStatusWrapper stat:
+    #         DiagnosticStatusWrapper provided by diagnostic_updater when called
 
-        Returns: The updated DiagnosticStatusWrapper
-        :rtype: diagnostic_updater.DiagnosticStatusWrapper
-        """
-        for i, rbc_ctl in enumerate(self._rbc_ctls):
-            diag = rbc_ctl.read_diag()
+    #     Returns: The updated DiagnosticStatusWrapper
+    #     :rtype: diagnostic_updater.DiagnosticStatusWrapper
+    #     """
+    #     for i, rbc_ctl in enumerate(self._rbc_ctls):
+    #         diag = rbc_ctl.read_diag()
 
-            stat.add("[{}] Temperature 1 (C):".format(i), diag.temp1)
-            stat.add("[{}] Temperature 2 (C):".format(i), diag.temp2)
-            stat.add("[{}] Main Battery (V):".format(i), diag.main_battery_v)
-            stat.add("[{}] Logic Battery (V):".format(i), diag.logic_battery_v)
-            stat.add("[{}] Motor 1 current (Amps):".format(i), diag.m1_current)
-            stat.add("[{}] Motor 2 current (Amps):".format(i), diag.m2_current)
+    #         stat.add("[{}] Temperature 1 (C):".format(i), diag.temp1)
+    #         stat.add("[{}] Temperature 2 (C):".format(i), diag.temp2)
+    #         stat.add("[{}] Main Battery (V):".format(i), diag.main_battery_v)
+    #         stat.add("[{}] Logic Battery (V):".format(i), diag.logic_battery_v)
+    #         stat.add("[{}] Motor 1 current (Amps):".format(i), diag.m1_current)
+    #         stat.add("[{}] Motor 2 current (Amps):".format(i), diag.m2_current)
 
-            for msg in diag.error_messages:
-                level = diagnostic_msgs.msg.DiagnosticStatus.WARN
-                if "error" in msg:
-                    level = diagnostic_msgs.msg.DiagnosticStatus.ERROR
-                stat.summary(level, "[{}]: msg".format(i))
+    #         for msg in diag.error_messages:
+    #             level = diagnostic_msgs.msg.DiagnosticStatus.WARN
+    #             if "error" in msg:
+    #                 level = diagnostic_msgs.msg.DiagnosticStatus.ERROR
+    #             stat.summary(level, "[{}]: msg".format(i))
 
-        return stat
+    #     return stat
 
     def _speed_cmd_callback(self, command):
         """

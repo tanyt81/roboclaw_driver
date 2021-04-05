@@ -8,3 +8,11 @@ int32 m2_enc_val
 # Motor 1 & 2 speed values in QPPS (+/-)
 int32 m1_enc_qpps
 int32 m2_enc_qpps
+
+
+# Motor 1 & 2 current pull
+int32 m1_current
+int32 m2_current
+
+# Motor Controller Temperature
+int32 mc_temp
