@@ -51,6 +51,7 @@ add_message_files(
   FILES
   Stats.msg
   SpeedCommand.msg
+  AngularVelCommand.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -13,6 +13,7 @@
     <arg name="deadman_secs"    default="3"                         />
     <arg name="speed_cmd_topic" default="$(arg name)/speed_command" />
     <arg name="stats_topic"     default="$(arg name)/stats"         />
+    <arg name="qpps_accel"      default="300"                       /> <!-- acceleration for qpps-->
 
     <node name="$(arg name)" pkg="roboclaw_driver" type="roboclaw_node.py" output="screen">
         <param name="test_mode" type="bool" value="$(arg test_mode)" />
@@ -24,6 +25,7 @@
  
         <param name="speed_cmd_topic" type="str" value="$(arg speed_cmd_topic)" />
         <param name="stats_topic" type="str" value="$(arg stats_topic)" />
+        <param name="qpps_accel" type="int" value="$(arg qpps_accel)" />
     </node>
 
 </launch>

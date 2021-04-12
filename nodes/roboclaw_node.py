@@ -3,12 +3,13 @@
 from __future__ import print_function
 import traceback
 import threading
+import math
 
 import rospy
 import diagnostic_updater
 import diagnostic_msgs
 
-from roboclaw_driver.msg import Stats, SpeedCommand
+from roboclaw_driver.msg import Stats, SpeedCommand, AngularVelCommand
 from roboclaw_driver import RoboclawControl, Roboclaw, RoboclawStub
 
 
@@ -17,13 +18,15 @@ DEFAULT_BAUD_RATE = 115200
 DEFAULT_NODE_NAME = "roboclaw"
 DEFAULT_LOOP_HZ = 100
 DEFAULT_ADDRESS = 0x81
-DEFAULT_DEADMAN_SEC = 3
+DEFAULT_DEADMAN_SEC = 1
 DEFAULT_STATS_TOPIC = "~stats"
 DEFAULT_SPEED_CMD_TOPIC = "~speed_command"
+DEFAULT_ANGULAR_VEL_CMD_TOPIC = "~angular_vel_command"
+DEFAULT_QPPS_ACCEL = 300
 
 
 class RoboclawNode:
-    def __init__(self, node_name):
+    def __init__(self, node_name, qpps_accel):
         """
         Parameters:
             :param str node_name: ROS node name
@@ -31,6 +34,7 @@ class RoboclawNode:
             :param int loop_rate: Integer rate in Hz of the main loop
         """
         self._node_name = node_name
+        self._qpps_accel = qpps_accel
         self._rbc_ctls = []  # Populated by the connect() method
 
         # Records the values of the last speed command
@@ -58,6 +62,12 @@ class RoboclawNode:
             rospy.get_param("~speed_cmd_topic", DEFAULT_SPEED_CMD_TOPIC),
             SpeedCommand,
             self._speed_cmd_callback
+        )
+
+        rospy.Subscriber(
+            rospy.get_param("~angular_vel_cmd_topic", DEFAULT_ANGULAR_VEL_CMD_TOPIC),
+            AngularVelCommand,
+            self._angular_cmd_callback
         )
 
         # For logdebug
@@ -181,6 +191,46 @@ class RoboclawNode:
 
     #     return stat
 
+    # angular in rad / sec
+    def _angular2qpps(self,ang_vel):
+        # deg * gear ratio * counts per rev 
+        return int(ang_vel / (2*math.pi) * 150 * 64)
+
+    def _angular_cmd_callback(self, command):
+        """
+        Parameters:
+            :param Angular Vel command: The forward/turn command message
+        """
+        with self._speed_cmd_lock:
+            self._last_cmd_time = rospy.get_rostime()
+
+            # angular to qpps
+            m1_qpps = self._angular2qpps(command.bl_speed)
+            m2_qpps = -self._angular2qpps(command.br_speed) #wheel direction reverse
+
+            # Skip if the new command is not different than the last command
+            if (m1_qpps == self._last_cmd_m1_qpps
+                and m2_qpps == self._last_cmd_m2_qpps
+                and self._qpps_accel == self._last_cmd_accel
+                and DEFAULT_DEADMAN_SEC == self._last_cmd_max_secs):
+                rospy.logdebug("Speed Command received, but no change in command values")
+
+            else:
+                rospy.logdebug(
+                    "M1 speed: {} | M2 speed: {} | Accel: {} | Max Secs: {}"
+                    .format(m1_qpps, m2_qpps, self._qpps_accel, DEFAULT_DEADMAN_SEC)
+                )
+
+                for rbc_ctl in self._rbc_ctls:
+                    success = rbc_ctl.driveM1M2qpps(
+                        m1_qpps, m2_qpps,
+                        self._qpps_accel, DEFAULT_DEADMAN_SEC
+                    )
+
+                    if not success:
+                        rospy.logerr("RoboclawControl SpeedAccelDistanceM1M2 failed")
+
+
     def _speed_cmd_callback(self, command):
         """
         Parameters:
@@ -231,6 +281,7 @@ if __name__ == "__main__":
     loop_hz = int(rospy.get_param("~loop_hz", DEFAULT_LOOP_HZ))
     deadman_secs = int(rospy.get_param("~deadman_secs", DEFAULT_DEADMAN_SEC))
     test_mode = bool(rospy.get_param("~test_mode", False))
+    qpps_accel = int(rospy.get_param("~qpps_accel", DEFAULT_QPPS_ACCEL))
 
     rospy.logdebug("node_name: {}".format(node_name))
     rospy.logdebug("dev_names: {}".format(dev_names))
@@ -240,7 +291,7 @@ if __name__ == "__main__":
     rospy.logdebug("deadman_secs: {}".format(deadman_secs))
     rospy.logdebug("test_mode: {}".format(test_mode))
 
-    node = RoboclawNode(node_name)
+    node = RoboclawNode(node_name, qpps_accel)
     rospy.on_shutdown(node.shutdown_node)
 
     try:
