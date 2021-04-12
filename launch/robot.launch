@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <launch>
+
+<!-- Front Part of the robot-->
+    <arg name="front_name"            default="front_rb"                  />
+    <arg name="front_dev_names"       default="/dev/ttyACM0"              />
+    <arg name="front_address"         default="128"                       />
+    <arg name="front_imu_serial_port" default="/dev/ttyAMA1" />
+
+<!-- Back Part of the robot-->
+    <arg name="back_name"            default="back_rb"                  />
+    <arg name="back_dev_names"       default="/dev/ttyACM1"              />
+    <arg name="back_address"         default="129"                       />
+    <arg name="back_imu_serial_port" default="/dev/ttyS0" />
+
+<!-- Common to both -->
+    <arg name="test_mode"       default="false"                     />
+    <arg name="baud"            default="115200"                    />
+    <arg name="loop_hz"         default="10"                        />
+    <arg name="deadman_secs"    default="3"                         />
+    <arg name="speed_cmd_topic" default="speed_command" />
+    <arg name="angular_vel_cmd_topic" default="//angular_vel" />
+    <arg name="stats_topic"     default="stats"         />
+    <arg name="qpps_accel"      default="1000"                       /> <!-- acceleration for qpps-->
+
+<!-- IMU specifics-->
+    <arg name="frame_id" default="imu_link" />
+    <arg name="operation_mode" default="IMU"/>
+    <arg name="oscillator" default="INTERNAL" />
+    <arg name="reset_orientation" default="true" />
+    <arg name="frequency" default="50" /> 
+    <arg name="use_magnetometer" default="false" />
+    <arg name="use_temperature" default="false" /> 
+
+<group ns="front">
+    <node pkg="ros_imu_bno055" type="imu_ros.py" name="front_imu" output="screen">
+        <param name="serial_port" value="$(arg front_imu_serial_port)" />
+        <param name="frame_id" value="$(arg frame_id)" />
+        <param name="operation_mode" value="$(arg operation_mode)" />
+        <param name="oscillator" value="$(arg oscillator)" />
+        <param name="reset_orientation" value = "$(arg reset_orientation)" />
+        <param name="frequency" value="$(arg frequency)" />
+        <param name="use_magnetometer" value="$(arg use_magnetometer)" />    
+        <param name="use_temperature" value="$(arg use_temperature)" />    
+    </node>
+
+    <node name="$(arg front_name)" pkg="roboclaw_driver" type="roboclaw_node.py" output="screen">
+        <param name="test_mode" type="bool" value="$(arg test_mode)" />
+        <param name="dev_names" type="str" value="$(arg front_dev_names)" />
+        <param name="baud" type="int" value="$(arg baud)" />
+        <param name="address" type="int" value="$(arg front_address)" />
+        <param name="loop_hz" type="int" value="$(arg loop_hz)" />
+        <param name="deadman_secs" type="int" value="$(arg deadman_secs)" />
+        <param name="speed_cmd_topic" type="str" value="$(arg speed_cmd_topic)" />
+        <param name="angular_vel_cmd_topic" type="str" value="$(arg angular_vel_cmd_topic)" />
+        <param name="stats_topic" type="str" value="$(arg stats_topic)" />
+        <param name="qpps_accel" type="int" value="$(arg qpps_accel)" />
+        <param name="flip_left_wheel" type="bool" value="true" />
+        <param name="front_wheel" type="bool" value="true" />
+    </node>
+</group>
+
+<group ns="back">
+    <node pkg="ros_imu_bno055" type="imu_ros.py" name="back_imu" output="screen">
+        <param name="serial_port" value="$(arg back_imu_serial_port)" />
+        <param name="frame_id" value="$(arg frame_id)" />
+        <param name="operation_mode" value="$(arg operation_mode)" />
+        <param name="oscillator" value="$(arg oscillator)" />
+        <param name="reset_orientation" value = "$(arg reset_orientation)" />
+        <param name="frequency" value="$(arg frequency)" />
+        <param name="use_magnetometer" value="$(arg use_magnetometer)" />    
+        <param name="use_temperature" value="$(arg use_temperature)" />    
+    </node>
+
+    <node name="$(arg back_name)" pkg="roboclaw_driver" type="roboclaw_node.py" output="screen">
+        <param name="test_mode" type="bool" value="$(arg test_mode)" />
+        <param name="dev_names" type="str" value="$(arg back_dev_names)" />
+        <param name="baud" type="int" value="$(arg baud)" />
+        <param name="address" type="int" value="$(arg back_address)" />
+        <param name="loop_hz" type="int" value="$(arg loop_hz)" />
+        <param name="deadman_secs" type="int" value="$(arg deadman_secs)" />
+        <param name="speed_cmd_topic" type="str" value="$(arg speed_cmd_topic)" />
+        <param name="angular_vel_cmd_topic" type="str" value="$(arg angular_vel_cmd_topic)" />
+        <param name="stats_topic" type="str" value="$(arg stats_topic)" />
+        <param name="qpps_accel" type="int" value="$(arg qpps_accel)" />
+        <param name="flip_left_wheel" type="bool" value="true" />
+        <param name="front_wheel" type="bool" value="false" />
+    </node>
+</group>
+
+</launch>

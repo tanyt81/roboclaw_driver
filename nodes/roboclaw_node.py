@@ -22,11 +22,13 @@ DEFAULT_DEADMAN_SEC = 1
 DEFAULT_STATS_TOPIC = "~stats"
 DEFAULT_SPEED_CMD_TOPIC = "~speed_command"
 DEFAULT_ANGULAR_VEL_CMD_TOPIC = "~angular_vel_command"
-DEFAULT_QPPS_ACCEL = 300
+DEFAULT_QPPS_ACCEL = 500
+DEFAULT_WHEEL_FLIP_LEFT = False #if false, flip right (m2)
+DEFAULT_FRONT_WHEEL = False #if false, back(bottom) wheel 
 
 
 class RoboclawNode:
-    def __init__(self, node_name, qpps_accel):
+    def __init__(self, node_name, qpps_accel,is_left_wheel_flip, is_front_wheel):
         """
         Parameters:
             :param str node_name: ROS node name
@@ -35,6 +37,8 @@ class RoboclawNode:
         """
         self._node_name = node_name
         self._qpps_accel = qpps_accel
+        self._is_left_wheel_flip = is_left_wheel_flip
+        self._is_front_wheel = is_front_wheel
         self._rbc_ctls = []  # Populated by the connect() method
 
         # Records the values of the last speed command
@@ -204,9 +208,22 @@ class RoboclawNode:
         with self._speed_cmd_lock:
             self._last_cmd_time = rospy.get_rostime()
 
-            # angular to qpps
-            m1_qpps = self._angular2qpps(command.bl_speed)
-            m2_qpps = -self._angular2qpps(command.br_speed) #wheel direction reverse
+            # determine which wheel
+            if(self._is_front_wheel):
+                speed_l = command.tl_speed
+                speed_r = command.tr_speed
+            else:
+                speed_l = -command.bl_speed
+                speed_r = -command.br_speed
+
+
+            # angular to qpps 
+            if(self._is_left_wheel_flip): #wheel direction reverse
+                m1_qpps = -self._angular2qpps(speed_l)
+                m2_qpps = self._angular2qpps(speed_r) 
+            else:
+                m1_qpps = self._angular2qpps(speed_l)
+                m2_qpps = -self._angular2qpps(speed_r) 
 
             # Skip if the new command is not different than the last command
             if (m1_qpps == self._last_cmd_m1_qpps
@@ -282,6 +299,8 @@ if __name__ == "__main__":
     deadman_secs = int(rospy.get_param("~deadman_secs", DEFAULT_DEADMAN_SEC))
     test_mode = bool(rospy.get_param("~test_mode", False))
     qpps_accel = int(rospy.get_param("~qpps_accel", DEFAULT_QPPS_ACCEL))
+    is_left_wheel_flip = bool(rospy.get_param("~flip_left_wheel", DEFAULT_WHEEL_FLIP_LEFT))
+    is_front_wheel = int(rospy.get_param("~front_wheel", DEFAULT_FRONT_WHEEL)) 
 
     rospy.logdebug("node_name: {}".format(node_name))
     rospy.logdebug("dev_names: {}".format(dev_names))
@@ -291,7 +310,7 @@ if __name__ == "__main__":
     rospy.logdebug("deadman_secs: {}".format(deadman_secs))
     rospy.logdebug("test_mode: {}".format(test_mode))
 
-    node = RoboclawNode(node_name, qpps_accel)
+    node = RoboclawNode(node_name, qpps_accel, is_left_wheel_flip, is_front_wheel)
     rospy.on_shutdown(node.shutdown_node)
 
     try:

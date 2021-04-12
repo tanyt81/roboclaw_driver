@@ -6,7 +6,7 @@
 
     <arg name="name"            default="roboclaw"                  />
     <arg name="test_mode"       default="false"                     />
-    <arg name="dev_names"       default="/dev/ttyACM0"              />
+    <arg name="dev_names"       default="/dev/ttyACM1"              />
     <arg name="baud"            default="115200"                    />
     <arg name="address"         default="129"                       />
     <arg name="loop_hz"         default="10"                        />
